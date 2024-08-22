@@ -1,3 +1,5 @@
+"use client";
+
 import {
   AppBar,
   Box,
@@ -9,10 +11,41 @@ import {
 } from "@mui/material";
 import Head from "next/head";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import getStripe from "@/utils/get-stripe";
 
 export default function Home() {
+  const handleSubmit = async () => {
+    try {
+      const checkoutSession = await fetch("/api/checkout_session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!checkoutSession.ok) {
+        const errorResponse = await checkoutSession.json();
+        console.error("Error:", errorResponse.message);
+        return;
+      }
+
+      const checkoutSessionJson = await checkoutSession.json();
+      const stripe = await getStripe();
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: checkoutSessionJson.id,
+      });
+
+      if (error) {
+        console.warn("Stripe Error:", error.message);
+      }
+    } catch (error) {
+      console.error("Unexpected Error:", error);
+    }
+  };
+
   return (
-    <Container container="100vw">
+    <Container maxWidth="lg">
       <Head>
         <title>Flashcard</title>
         <meta name="description" content="Create flashcard from text" />
@@ -56,7 +89,7 @@ export default function Home() {
           Learn More
         </Button>
       </Box>
-      {/*  */}
+
       <Box sx={{ my: 6 }}>
         <Typography variant="h4" component="h2" gutterBottom>
           Features
@@ -71,27 +104,19 @@ export default function Home() {
           <Grid item md={4}>
             <Typography>Smart Flashcards</Typography>
             <Typography>
-              Our Ai intelligently breaks down your text into concise
-              flashcards, perfect for studying
+              Our AI intelligently breaks down your text into concise
+              flashcards, perfect for studying.
             </Typography>
           </Grid>
           <Grid item md={4}>
-            <Typography>Accesibility Anywhere</Typography>
+            <Typography>Accessibility Anywhere</Typography>
             <Typography>
               Access your Flashcards from any devices at any time. Study on the
-              go with ease{" "}
-            </Typography>
-          </Grid>
-          <Grid item md={4}>
-            <Typography>Accesibility Anywhere</Typography>
-            <Typography>
-              Access your Flashcards from any devices at any time. Study on the
-              go with ease{" "}
+              go with ease.
             </Typography>
           </Grid>
         </Grid>
       </Box>
-      {/*  */}
       <Box sx={{ my: 6, textAlign: "center" }}>
         <Typography variant="h4" component="h2" gutterBottom>
           Pricing
@@ -111,9 +136,9 @@ export default function Home() {
               </Typography>
               <Typography variant="h6">$5 / monthly</Typography>
               <Typography>
-                Access to basic flashcard feature and limited storage
+                Access to basic flashcard features and limited storage.
               </Typography>
-              <Button varaiants="contained" color="primary" sx={{ mt: 2 }}>
+              <Button variant="contained" color="primary" sx={{ mt: 2 }}>
                 Choose Basic
               </Button>
             </Box>
@@ -132,9 +157,14 @@ export default function Home() {
               </Typography>
               <Typography variant="h6">$15 / monthly</Typography>
               <Typography>
-                Unlimited flashcards and storage with prioirty support
+                Unlimited flashcards and storage with priority support.
               </Typography>
-              <Button varaiants="contained" color="primary" sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+                onClick={handleSubmit}
+              >
                 Choose Pro
               </Button>
             </Box>

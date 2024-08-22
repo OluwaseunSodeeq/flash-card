@@ -18,13 +18,16 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { useRouter } from "next/router";
+// import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
 import { collection, doc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/firebase";
 
 export default function Generate() {
-  const [isLoaded, isSignedIn, user] = useUser();
+  //   const [isLoaded, isSignedIn, user] = useUser();
+  const { user } = useUser();
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [flipped, setFlipped] = useState([]);
@@ -33,30 +36,31 @@ export default function Generate() {
   const router = useRouter();
 
   const handleSubmit = async () => {
-    fetch(api / generate, { method: "POST", body: text })
-      .then((res) => res.json())
-      .then((data) => setFlashcards(data));
-    // if (!text.trim()) {
-    //   alert("Please enter some text to generate flashcards.");
-    //   return;
-    // }
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
 
-    // try {
-    //   const response = await fetch("/api/generate", {
-    //     method: "POST",
-    //     body: text,
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setFlashcards(data);
+    } catch (error) {
+      console.error("Error during the API request:", error);
+      alert("There was an error generating the flashcards. Please try again.");
+    }
+    // fetch("api/generate", { method: "POST", body: text })
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     console.log(data);
+    //     return setFlashcards(data);
     //   });
-
-    //   if (!response.ok) {
-    //     throw new Error("Failed to generate flashcards");
-    //   }
-
-    //   const data = await response.json();
-    //   setFlashcards(data);
-    // } catch (error) {
-    //   console.error("Error generating flashcards:", error);
-    //   alert("An error occurred while generating flashcards. Please try again.");
-    // }
   };
   const handleCardClick = (id) => {
     setFlipped((prev) => ({
@@ -125,14 +129,7 @@ export default function Generate() {
             variant="outlined"
             sx={{ mb: 2 }}
           />
-          {/* <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-            fullWidth
-          >
-            Generate Flashcards
-          </Button> */}
+
           <Button
             variant="contained"
             color="primary"
@@ -200,11 +197,6 @@ export default function Generate() {
                           </div>
                         </div>
                       </Box>
-                      {/* <Typography variant="h6">Front:</Typography>
-                      <Typography variant="h6" sx={{ mt: 2 }}>
-                        Back:
-                      </Typography>
-                      <Typography>{flashcard.back}</Typography> */}
                     </CardContent>
                   </CardActionArea>
                 </Card>
